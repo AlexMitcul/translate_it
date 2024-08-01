@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  api:
+    image: translate_it:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring_api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/translate_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - postgres
+
+  db:
+    image: postgres:16.1
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: translate_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres
+
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres_data:

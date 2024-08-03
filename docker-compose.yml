@@ -5,7 +5,7 @@ services:
     image: translate_it:latest
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/api/Dockerfile
     container_name: spring_api
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/translate_db
@@ -20,6 +20,9 @@ services:
 
   db:
     image: postgres:16.1
+    build:
+      context: ./docker/database/
+      dockerfile: Dockerfile
     container_name: postgres_db
     environment:
       POSTGRES_USER: postgres

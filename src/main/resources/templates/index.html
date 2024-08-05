@@ -4,45 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Translation App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            margin-bottom: 10px;
-            padding: 10px;
-            box-sizing: border-box;
-            font-size: 16px;
-            color: #333;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        select, button {
-            margin-bottom: 10px;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        textarea::placeholder {
-            color: #aaa;
-            font-style: italic;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
 <div class="container">
@@ -52,6 +14,7 @@
             <label for="sourceLang">From:</label>
             <select id="sourceLang" name="sourceLang">
                 <option value="EN">English</option>
+                <option value="RU">Русский</option>
                 <option value="ES">Spanish</option>
                 <option value="FR">French</option>
             </select>
@@ -59,6 +22,7 @@
         <div>
             <label for="targetLang">To:</label>
             <select id="targetLang" name="targetLang">
+                <option value="RU">Русский</option>
                 <option value="EN">English</option>
                 <option value="ES">Spanish</option>
                 <option value="FR">French</option>
@@ -73,30 +37,6 @@
     <div class="result" id="result">
     </div>
 </div>
-
-<script>
-    const textarea = document.getElementById('text');
-
-    document.getElementById('translationForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const formData = new URLSearchParams({
-            text: document.getElementById('text').value,
-            sourceLang: document.getElementById('sourceLang').value,
-            targetLang: document.getElementById('targetLang').value
-        }).toString();
-
-        fetch(`/translate?${formData}`, {
-            method: 'POST'
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('result').innerText = data.translatedText;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    });
-</script>
+<script src="/js/scripts.js"></script>
 </body>
 </html>

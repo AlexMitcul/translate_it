@@ -14,5 +14,4 @@ maven-wrapper.jar
 *.iws
 
 # Local environment
-.env
 logs/

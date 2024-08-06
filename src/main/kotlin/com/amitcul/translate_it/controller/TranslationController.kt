@@ -39,7 +39,7 @@ class TranslationController(
             )
         }
 
-        return response
+        return ResponseEntity("${response.statusCode}: ${response.body}", response.statusCode)
     }
 
 }

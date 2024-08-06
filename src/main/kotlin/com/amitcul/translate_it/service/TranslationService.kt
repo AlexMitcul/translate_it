@@ -4,13 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.*
 import org.springframework.stereotype.Service
-import org.springframework.web.client.*
-import java.util.concurrent.*
+import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.RestTemplate
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
 @Service
-class TranslationService(private val restTemplate: RestTemplate,
-                         private val objectMapper: ObjectMapper
+class TranslationService(
+    private val restTemplate: RestTemplate,
+    private val objectMapper: ObjectMapper
 ) {
 
     @Value("\${api.url}")
@@ -19,17 +21,17 @@ class TranslationService(private val restTemplate: RestTemplate,
     @Value("\${api.key}")
     private lateinit var apiKey: String
 
-    private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
-
     fun translate(inputText: String, sourceLang: String, targetLang: String): ResponseEntity<String> {
         val words = inputText.split(" ")
         val firstError = AtomicReference<String?>(null)
 
         val futures = words.map { word ->
-            CompletableFuture.supplyAsync({
-                if (firstError.get() != null) return@supplyAsync null
+            CompletableFuture.supplyAsync {
+                if (firstError.get() != null) {
+                    return@supplyAsync null
+                }
 
-                try {
+                runCatching {
                     val headers = HttpHeaders().apply {
                         set("Authorization", "DeepL-Auth-Key $apiKey")
                         set("User-Agent", "YourApp/1.2.3")
@@ -51,25 +53,22 @@ class TranslationService(private val restTemplate: RestTemplate,
                     )
 
                     if (response.statusCode == HttpStatus.OK) {
-                        val responseBody = response.body ?: "Ошибка получения перевода"
-                        val resultMap = objectMapper.readValue(responseBody, Map::class.java) as Map<String, Any>
-                        val translations = resultMap["translations"] as List<Map<String, Any>>
-                        translations.firstOrNull()?.get("text") as? String ?: "Ошибка перевода"
+                        val resultMap = objectMapper.readValue(response.body ?: "", Map::class.java) as Map<String, Any>
+                        val translations = resultMap["translations"] as? List<Map<String, Any>>
+                        translations?.firstOrNull()?.get("text") as? String ?: "Ошибка перевода"
                     } else {
-                        "Ошибка перевода: ${response.statusCode}"
+                        val errorMessage = extractErrorMessage(response.body ?: "")
+                        firstError.set(errorMessage)
+                        throw HttpClientErrorException(response.statusCode, errorMessage)
                     }
-                } catch (e: HttpClientErrorException) {
-                    val errorMessage = extractErrorMessage(e.responseBodyAsString)
-                    firstError.set(errorMessage)
-                    return@supplyAsync errorMessage
-                }
-            }, executorService).exceptionally { ex ->
-                if (firstError.get() == null) {
-                    val errorMessage = "Неизвестная ошибка: ${ex.message}"
+                }.getOrElse { ex ->
+                    val errorMessage = if (ex is HttpClientErrorException) {
+                        extractErrorMessage(ex.responseBodyAsString)
+                    } else {
+                        "Ошибка: ${ex.message}"
+                    }
                     firstError.set(errorMessage)
                     errorMessage
-                } else {
-                    null
                 }
             }
         }
@@ -80,7 +79,7 @@ class TranslationService(private val restTemplate: RestTemplate,
         return if (errorMessage != null) {
             ResponseEntity(errorMessage, HttpStatus.BAD_REQUEST)
         } else {
-            val translatedWords = futures.map { it.getNow("") }.joinToString(" ").trim()
+            val translatedWords = futures.mapNotNull { it.getNow(null) }.joinToString(" ").trim()
             ResponseEntity(translatedWords, HttpStatus.OK)
         }
     }
@@ -93,5 +92,4 @@ class TranslationService(private val restTemplate: RestTemplate,
             "Неизвестная ошибка"
         }
     }
-
 }

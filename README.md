@@ -1,84 +1,98 @@
-# Translation Application
+# Проект Translate IT
 
----
+Этот проект использует Docker для развертывания веб-приложения для перевода слов с использованием Nginx, Spring Boot и PostgreSQL.
+
+## Структура проекта
+
+- `nginx`: Контейнер для веб-сервера Nginx.
+- `api`: Контейнер для Spring Boot приложения.
+- `db`: Контейнер для базы данных PostgreSQL.
+
+## Требования
+
+- Docker
+- Docker Compose
+
+## Настройка проекта
+
+1. **Настройка сертификатов**:
+
+   Убедитесь, что у вас есть сертификаты SSL в каталоге `./nginx/certs/`. Если вы используете самоподписанные сертификаты, их можно создать, следуя инструкциям в предыдущем ответе.
+
+2. **Файлы конфигурации**:
+
+    - `nginx/conf` содержит конфигурационные файлы для Nginx.
+    - `docker/api/Dockerfile` содержит инструкции для создания Docker-образа для Spring Boot приложения.
+    - `docker/database/Dockerfile` содержит инструкции для создания Docker-образа для PostgreSQL (если требуется).
+
+## Сборка и запуск проекта
+
+1. **Сборка Docker образов**:
+
+   Выполните команду:
+
+   ```bash
+   make build
+   ```
+
+   Это создаст Docker образы для всех сервисов в вашем `docker-compose.yml`.
 
 
+2. **Запуск контейнеров**:
+
+   Запустите контейнеры с помощью команды:
+
+   ```bash
+   make up
+   ```
+
+   Это запустит контейнеры в фоновом режиме.
 
 
-## Running the Application
-1. Clone the repository
-    ```bash
-    git clone https://github.com/AlexMitcul/translate_it.git
-    cd translate_it
-    ```
-2. Build the project
-    ```bash
-    mvn clean install
-    ```
-3. Run the application
-    ```bash
-    mvn spring-boot:run
-    ```
+3. **Остановка и удаление контейнеров**:
 
+   Для остановки и удаления контейнеров используйте:
 
-### Or just use the Makefile command
+   ```bash
+   make down
+   ```
 
-# Makefile for Docker Compose
+4. **Пересборка контейнеров**:
 
-This Makefile provides a simple interface for managing Docker Compose projects. It defines common tasks to build, start, stop, and rebuild your Docker containers.
+   Если вам нужно пересобрать контейнеры, используйте:
 
-## Targets
+   ```bash
+   make rebuild
+   ```
 
-- **`build`**  
-  Builds the Docker images defined in the `docker-compose.yml` file.
+   Это остановит контейнеры, пересоберет образы и снова запустит контейнеры.
 
-  ```sh
-  make build
-  ```
+## Доступ к приложению
 
-- **`up`**  
-  Starts the Docker containers in detached mode using the `docker-compose.yml` file and an optional environment file (`.env`).
+- Веб-приложение доступно по адресу: `http://localhost` 
+- API доступно по адресу: `http://localhost/translate`.
 
-  ```sh
-  make up
-  ```
+Пример использования
+Вы можете использовать curl для отправки запроса на перевод:
 
-- **`down`**  
-  Stops and removes the Docker containers defined in the `docker-compose.yml` file.
-
-  ```sh
-  make down
-  ```
-
-- **`rebuild`**  
-  Stops the containers, rebuilds the Docker images, and starts the containers again.
-
-  ```sh
-  make rebuild
-  ```
-
-## Configuration
-
-- **`DC_PATH`**  
-  Path to the `docker-compose.yml` file. Default is `./docker-compose.yml`.
-
-- **`ENV_FILE_PATH`**  
-  Path to the `.env` file for environment variables. Default is `.env`.
-
-## Usage
-
-To use this Makefile, navigate to the directory containing it and run one of the targets with the `make` command. For example, to build and start the containers, use:
-
-```sh
-make rebuild
+```bash
+curl -k -X POST "https://localhost/translate" \
+--data-urlencode "text=Hello, World" \
+--data-urlencode "sourceLang=en" \
+--data-urlencode "targetLang=ru"
 ```
 
-## Notes
+Параметры запроса:
 
-- All targets are marked as `.PHONY` to ensure that they are always executed regardless of file names.
-- Ensure Docker and Docker Compose are installed and properly configured on your system.
+`text`: Текст, который вы хотите перевести. \
+`sourceLang`: Исходный язык текста. \
+`targetLang`: Целевой язык для перевода. 
 
-Feel free to modify the `DC_PATH` and `ENV_FILE_PATH` variables if your file paths are different.
+**Примечание**: Флаг -k используется для игнорирования проверки сертификатов SSL. Это необходимо при использовании самоподписанных сертификатов.
 
-## License
-This project is licensed under the MIT License.
+## Примечания
+
+- Убедитесь, что у вас установлены все зависимости и правильно настроены переменные окружения.
+- Для работы с самоподписанными сертификатами, вам может потребоваться добавить их в список доверенных в вашем браузере.
+
+---

@@ -1,19 +1,19 @@
 package com.amitcul.translate_it.controller
 
+import com.amitcul.translate_it.dao.TranslationDAO
 import com.amitcul.translate_it.model.Translation
 import com.amitcul.translate_it.service.TranslationService
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestHeader
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 
 
 @RestController
 @RequestMapping("/translate")
 class TranslationController(
-    @Autowired private val translationService: TranslationService
+    private val translationService: TranslationService,
+    private val translationDAO: TranslationDAO
 ) {
 
     @PostMapping
@@ -22,9 +22,24 @@ class TranslationController(
         @RequestParam sourceLang: String,
         @RequestParam targetLang: String,
         @RequestHeader(value = "X-Forwarded-For", required = false) ipAddress: String?
-    ): Translation {
-        val clientIpAddress = ipAddress?.takeIf { it.isNotEmpty() } ?: "IP not provided"
-        return translationService.translateAndSave(text, sourceLang, targetLang, clientIpAddress)
+    ): ResponseEntity<String> {
+        val response: ResponseEntity<String> =
+            translationService.translate(text, sourceLang, targetLang)
+
+        if (response.statusCode == HttpStatus.OK) {
+            translationDAO.save(
+                Translation(
+                    ipAddress = ipAddress ?: "IP address not provided",
+                    sourceText = text,
+                    translatedText = response.body.toString(),
+                    targetLang = targetLang,
+                    sourceLang = sourceLang,
+                    createdAt = LocalDateTime.now()
+                )
+            )
+        }
+
+        return response
     }
 
 }

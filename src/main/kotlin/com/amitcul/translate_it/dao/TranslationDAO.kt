@@ -13,7 +13,7 @@ class TranslationDAO(
     fun save(translation: Translation): Translation {
         val sql = """
             INSERT INTO translation_requests (ip_address, source_text, translated_text, target_lang, source_lang, created_at)
-            VALUES (?, ?, ?, ?, ?, ?) 
+            VALUES (?, ?, ?, ?, ?, ?)
         """.trimIndent()
         jdbcTemplate.update(sql,
             translation.ipAddress,

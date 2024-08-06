@@ -1,27 +1,30 @@
 document.getElementById('translationForm').addEventListener('submit', function(event) {
     event.preventDefault();
 
-
     const formData = new URLSearchParams({
         text: document.getElementById('text').value,
         sourceLang: document.getElementById('sourceLang').value,
         targetLang: document.getElementById('targetLang').value
     }).toString();
 
-    fetch(`/translate?${formData}`, {
-        method: 'POST'
+    fetch('/translate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData
     })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('result').innerText = data.translatedText;
+        .then(response => response.text().then(text => ({ status: response.status, text })))
+        .then(({ status, text }) => {
+            if (status === 200) {
+                document.getElementById('result').innerText = text;
+            } else if (status === 400) {
+                document.getElementById('result').innerText = `Ошибка: ${text}`;
+            } else {
+                document.getElementById('result').innerText = `Ошибка: ${status} ${text}`;
+            }
         })
         .catch(error => {
-            if (error.response) {
-                document.getElementById('result').innerText = `Ошибка: ${error.response.status} - ${error.response.statusText}`;
-            } else if (error.request) {
-                document.getElementById('result').innerText = 'Ошибка: Не удалось получить ответ от сервера';
-            } else {
-                document.getElementById('result').innerText = `Ошибка: ${error.message}`;
-            }
+            document.getElementById('result').innerText = `Ошибка: ${error.message}`;
         });
 });
